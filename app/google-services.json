@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "32797506229",
+    "firebase_url": "https://mymemory-4d65a.firebaseio.com",
+    "project_id": "mymemory-4d65a",
+    "storage_bucket": "mymemory-4d65a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:32797506229:android:0b20ff136b730bf2579cfc",
+        "android_client_info": {
+          "package_name": "com.rkpandey.mymemory"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "32797506229-ubm7jqm7gqp9kv6vod00suolov6chbok.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYLURsKa-6sytQURmiWxFSsIks9AGmRjU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "32797506229-ubm7jqm7gqp9kv6vod00suolov6chbok.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
