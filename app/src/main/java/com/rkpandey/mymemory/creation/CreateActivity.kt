@@ -4,9 +4,12 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
@@ -15,13 +18,16 @@ import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.rkpandey.mymemory.R
 import com.rkpandey.mymemory.models.BoardSize
+import com.rkpandey.mymemory.utils.BitmapScaler
 import com.rkpandey.mymemory.utils.EXTRA_BOARD_SIZE
 import com.rkpandey.mymemory.utils.isPermissionGranted
 import com.rkpandey.mymemory.utils.requestPermission
+import java.io.ByteArrayOutputStream
 
 class CreateActivity : AppCompatActivity() {
 
@@ -54,6 +60,18 @@ class CreateActivity : AppCompatActivity() {
     numImagesRequired = boardSize.getNumPairs()
     supportActionBar?.title = "Choose pics (0 / $numImagesRequired)"
 
+    btnSave.setOnClickListener {
+      saveDataToFirebase()
+    }
+    etGameName.filters = arrayOf(InputFilter.LengthFilter(14))
+    etGameName.addTextChangedListener(object : TextWatcher {
+      override fun afterTextChanged(s: Editable?) {
+        btnSave.isEnabled = shouldEnableSaveButton()
+      }
+
+      override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+      override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+    })
     imagePickerAdapter = ImagePickerAdapter(this, chosenImageUris, boardSize, object: ImagePickerAdapter.ImageClickListener {
       override fun onPlaceholderClicker() {
         // Need READ_EXTERNAL_FILES permission
@@ -114,8 +132,35 @@ class CreateActivity : AppCompatActivity() {
     btnSave.isEnabled = shouldEnableSaveButton()
   }
 
+  private fun saveDataToFirebase() {
+    Log.i(TAG, "Going to save data to Firebase")
+    for ((index, photoUri) in chosenImageUris.withIndex()) {
+      val imageByteArray = getImageByteArray(photoUri)
+    }
+  }
+
+  private fun getImageByteArray(photoUri: Uri): ByteArray {
+    val originalBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      val source = ImageDecoder.createSource(contentResolver, photoUri)
+      ImageDecoder.decodeBitmap(source)
+    } else {
+      MediaStore.Images.Media.getBitmap(contentResolver, photoUri)
+    }
+    Log.i(TAG, "Original width ${originalBitmap.width} and height ${originalBitmap.height}")
+    val scaledBitmap = BitmapScaler.scaleToFitHeight(originalBitmap, 250)
+    Log.i(TAG, "Scaled width ${scaledBitmap.width} and height ${scaledBitmap.height}")
+    val byteOutputStream = ByteArrayOutputStream()
+    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 60, byteOutputStream)
+    return byteOutputStream.toByteArray()
+  }
+
   private fun shouldEnableSaveButton(): Boolean {
-    // Check if we should enable save button or not
+    if (chosenImageUris.size != numImagesRequired) {
+      return false
+    }
+    if (etGameName.text.isBlank() || etGameName.text.length < 3) {
+      return false
+    }
     return true
   }
 
