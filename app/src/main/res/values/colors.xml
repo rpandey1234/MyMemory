@@ -8,4 +8,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="color_gray">#E0E0E0</color>
+    <color name="color_progress_none">#DC1E0B</color>
+    <color name="color_progress_full">#35BA01</color>
 </resources>
