@@ -8,9 +8,14 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
+import com.rkpandey.mymemory.models.BoardSize
 import kotlin.math.min
 
-class MemoryBoardAdapter(private val context: Context, private val numPieces: Int) :
+class MemoryBoardAdapter(
+  private val context: Context,
+  private val boardSize: BoardSize,
+  private val cardImages: List<Int>
+) :
   RecyclerView.Adapter<MemoryBoardAdapter.ViewHolder>() {
 
   companion object {
@@ -31,7 +36,7 @@ class MemoryBoardAdapter(private val context: Context, private val numPieces: In
     return ViewHolder(view)
   }
 
-  override fun getItemCount() = numPieces
+  override fun getItemCount() = boardSize.numCards
 
   override fun onBindViewHolder(holder: ViewHolder, position: Int) {
     holder.bind(position)
@@ -41,7 +46,7 @@ class MemoryBoardAdapter(private val context: Context, private val numPieces: In
     private val imageButton = itemView.findViewById<ImageButton>(R.id.imageButton)
 
     fun bind(position: Int) {
-      imageButton.setImageResource(R.drawable.ic_launcher_background)
+      imageButton.setImageResource(cardImages[position])
       imageButton.setOnClickListener {
         Log.i(TAG, "Clicked on position $position")
       }
