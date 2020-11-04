@@ -26,6 +26,7 @@
         android:hint="Game name (example: 'panda_fun')"
         android:imeOptions="actionDone"
         android:importantForAutofill="no"
+        android:inputType="text"
         android:singleLine="true"
         app:layout_constraintBottom_toTopOf="@+id/btnSave"
         app:layout_constraintEnd_toEndOf="parent"
