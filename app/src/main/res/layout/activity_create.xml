@@ -10,6 +10,7 @@
         android:id="@+id/rvImagePicker"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:overScrollMode="never"
         app:layout_constraintBottom_toTopOf="@+id/etGameName"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -27,7 +28,7 @@
         android:imeOptions="actionDone"
         android:importantForAutofill="no"
         android:inputType="text"
-        android:singleLine="true"
+        android:maxLines="1"
         app:layout_constraintBottom_toTopOf="@+id/btnSave"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

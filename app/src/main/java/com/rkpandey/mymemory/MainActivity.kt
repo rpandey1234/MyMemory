@@ -215,7 +215,7 @@ class MainActivity : AppCompatActivity() {
   private fun updateGameWithFlip(position: Int) {
     // Error handling:
     if (memoryGame.haveWonGame()) {
-      Snackbar.make(clRoot, "You already won!", Snackbar.LENGTH_LONG).show()
+      Snackbar.make(clRoot, "You already won! Use the menu to play again.", Snackbar.LENGTH_LONG).show()
       return
     }
     if (memoryGame.isCardFaceUp(position)) {
