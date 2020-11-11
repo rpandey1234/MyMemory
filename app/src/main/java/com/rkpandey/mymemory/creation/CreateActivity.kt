@@ -147,7 +147,7 @@ class CreateActivity : AppCompatActivity() {
       if (document != null && document.data != null) {
         AlertDialog.Builder(this)
           .setTitle("Name taken")
-          .setMessage("A game already exists with the name $customGameName'. Please choose another")
+          .setMessage("A game already exists with the name '$customGameName'. Please choose another")
           .setPositiveButton("OK", null)
           .show()
         btnSave.isEnabled = true
