@@ -24,8 +24,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.analytics.ktx.logEvent
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.google.firebase.storage.ktx.storage
 import com.rkpandey.mymemory.R
 import com.rkpandey.mymemory.models.BoardSize
@@ -50,6 +53,8 @@ class CreateActivity : AppCompatActivity() {
   private lateinit var boardSize: BoardSize
   private val chosenImageUris = mutableListOf<Uri>()
   private var numImagesRequired = -1
+  private val firebaseAnalytics = Firebase.analytics
+  private val remoteConfig = Firebase.remoteConfig
   private val storage = Firebase.storage
   private val db = Firebase.firestore
 
@@ -142,6 +147,9 @@ class CreateActivity : AppCompatActivity() {
   private fun saveDataToFirebase() {
     Log.i(TAG, "Going to save data to Firebase")
     val customGameName = etGameName.text.toString().trim()
+    firebaseAnalytics.logEvent("creation_save_attempt") {
+      param("game_name", customGameName)
+    }
     btnSave.isEnabled = false
     db.collection("games").document(customGameName).get().addOnSuccessListener { document ->
       if (document != null && document.data != null) {
@@ -204,6 +212,9 @@ class CreateActivity : AppCompatActivity() {
           Toast.makeText(this, "Failed game creation", Toast.LENGTH_SHORT).show()
           return@addOnCompleteListener
         }
+        firebaseAnalytics.logEvent("creation_save_success") {
+          param("game_name", gameName)
+        }
         Log.i(TAG, "Successfully created game $gameName")
         AlertDialog.Builder(this)
           .setTitle("Upload complete! Let's play your game '$gameName'")
@@ -224,10 +235,10 @@ class CreateActivity : AppCompatActivity() {
       MediaStore.Images.Media.getBitmap(contentResolver, photoUri)
     }
     Log.i(TAG, "Original width ${originalBitmap.width} and height ${originalBitmap.height}")
-    val scaledBitmap = BitmapScaler.scaleToFitHeight(originalBitmap, 250)
+    val scaledBitmap = BitmapScaler.scaleToFitHeight(originalBitmap, remoteConfig.getLong("scaled_height").toInt())
     Log.i(TAG, "Scaled width ${scaledBitmap.width} and height ${scaledBitmap.height}")
     val byteOutputStream = ByteArrayOutputStream()
-    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 60, byteOutputStream)
+    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, remoteConfig.getLong("compress_quality").toInt(), byteOutputStream)
     return byteOutputStream.toByteArray()
   }
 
