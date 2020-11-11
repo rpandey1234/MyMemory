@@ -13,8 +13,10 @@ Here are some sample games you can try out:
 - `rahul`
 - `bitmoji`
 
-![](https://github.com/rpandey1234/MyMemory/blob/main/assets/customWinConfetti.png)
-![](https://github.com/rpandey1234/MyMemory/blob/main/assets/creationFlow.png)
+<p float="middle">
+    <img width="250px" src='https://github.com/rpandey1234/MyMemory/blob/main/assets/customWinConfetti.png' />
+    <img width="250px" src='https://github.com/rpandey1234/MyMemory/blob/main/assets/creationFlow.png' />
+</p>
 
 Open source libraries used:
 - Picasso: https://github.com/square/picasso
