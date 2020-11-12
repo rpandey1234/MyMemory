@@ -137,6 +137,11 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun downloadGame(customGameName: String) {
+    if (customGameName.isBlank()) {
+      Snackbar.make(clRoot, "Game name can't be blank", Snackbar.LENGTH_LONG).show()
+      Log.e(TAG, "Trying to retrieve an empty game name")
+      return
+    }
     firebaseAnalytics.logEvent("download_game_attempt") {
       param("game_name", customGameName)
     }
