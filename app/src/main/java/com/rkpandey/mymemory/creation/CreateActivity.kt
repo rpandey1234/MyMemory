@@ -1,9 +1,7 @@
 package com.rkpandey.mymemory.creation
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -32,7 +30,9 @@ import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.google.firebase.storage.ktx.storage
 import com.rkpandey.mymemory.R
 import com.rkpandey.mymemory.models.BoardSize
-import com.rkpandey.mymemory.utils.*
+import com.rkpandey.mymemory.utils.BitmapScaler
+import com.rkpandey.mymemory.utils.EXTRA_BOARD_SIZE
+import com.rkpandey.mymemory.utils.EXTRA_GAME_NAME
 import java.io.ByteArrayOutputStream
 
 class CreateActivity : AppCompatActivity() {
@@ -40,8 +40,6 @@ class CreateActivity : AppCompatActivity() {
   companion object {
     private const val TAG = "CreateActivity"
     private const val PICK_PHOTO_CODE = 655
-    private const val READ_EXTERNAL_PHOTOS_CODE = 248
-    private const val READ_PHOTOS_PERMISSION = Manifest.permission.READ_EXTERNAL_STORAGE
   }
 
   private lateinit var rvImagePicker: RecyclerView
@@ -86,12 +84,7 @@ class CreateActivity : AppCompatActivity() {
     })
     imagePickerAdapter = ImagePickerAdapter(this, chosenImageUris, boardSize, object: ImagePickerAdapter.ImageClickListener {
       override fun onPlaceholderClicker() {
-        // Need READ_EXTERNAL_FILES permission
-        if (isPermissionGranted(this@CreateActivity, READ_PHOTOS_PERMISSION)) {
-          launchIntentForPhotos()
-        } else {
-          requestPermission(this@CreateActivity, READ_PHOTOS_PERMISSION, READ_EXTERNAL_PHOTOS_CODE)
-        }
+        launchIntentForPhotos()
       }
     })
     rvImagePicker.adapter = imagePickerAdapter
@@ -105,17 +98,6 @@ class CreateActivity : AppCompatActivity() {
       return true
     }
     return super.onOptionsItemSelected(item)
-  }
-
-  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-    if (requestCode == READ_EXTERNAL_PHOTOS_CODE) {
-      if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        launchIntentForPhotos()
-      } else {
-        Toast.makeText(this, "In order to create a custom game, you need to provide access to your photos", Toast.LENGTH_LONG).show()
-      }
-    }
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
