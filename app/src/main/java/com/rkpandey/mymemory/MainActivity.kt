@@ -4,7 +4,7 @@ import android.animation.ArgbEvaluator
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
-import androidx.appcompat.app.AppCompatActivity
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,15 +15,18 @@ import android.widget.EditText
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.github.jinatonic.confetti.CommonConfetti
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.analytics.ktx.logEvent
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.rkpandey.mymemory.creation.CreateActivity
 import com.rkpandey.mymemory.models.BoardSize
 import com.rkpandey.mymemory.models.MemoryGame
@@ -45,6 +48,8 @@ class MainActivity : AppCompatActivity() {
   private lateinit var tvNumPairs: TextView
 
   private val db = Firebase.firestore
+  private val firebaseAnalytics = Firebase.analytics
+  private val remoteConfig = Firebase.remoteConfig
   private var gameName: String? = null
   private var customGameImages: List<String>? = null
   private lateinit var memoryGame: MemoryGame
@@ -59,6 +64,15 @@ class MainActivity : AppCompatActivity() {
     tvNumMoves = findViewById(R.id.tvNumMoves)
     tvNumPairs = findViewById(R.id.tvNumPairs)
 
+    remoteConfig.setDefaultsAsync(mapOf("about_link" to "https://www.youtube.com/rpandey1234", "scaled_height" to 250L, "compress_quality" to 60L))
+    remoteConfig.fetchAndActivate()
+      .addOnCompleteListener(this) { task ->
+        if (task.isSuccessful) {
+          Log.i(TAG, "Fetch/activate succeeded, did config get updated? ${task.result}")
+        } else {
+          Log.w(TAG, "Remote config fetch failed")
+        }
+      }
     setupBoard()
   }
 
@@ -91,6 +105,12 @@ class MainActivity : AppCompatActivity() {
         showDownloadDialog()
         return true
       }
+      R.id.mi_about -> {
+        firebaseAnalytics.logEvent("open_about_link", null)
+        val aboutLink = remoteConfig.getString("about_link")
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(aboutLink)))
+        return true
+      }
     }
     return super.onOptionsItemSelected(item)
   }
@@ -117,12 +137,23 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun downloadGame(customGameName: String) {
+    if (customGameName.isBlank()) {
+      Snackbar.make(clRoot, "Game name can't be blank", Snackbar.LENGTH_LONG).show()
+      Log.e(TAG, "Trying to retrieve an empty game name")
+      return
+    }
+    firebaseAnalytics.logEvent("download_game_attempt") {
+      param("game_name", customGameName)
+    }
     db.collection("games").document(customGameName).get().addOnSuccessListener { document ->
       val userImageList = document.toObject(UserImageList::class.java)
       if (userImageList?.images == null)   {
         Log.e(TAG, "Invalid custom game data from Firebase")
         Snackbar.make(clRoot, "Sorry, we couldn't find any such game, '$customGameName'", Snackbar.LENGTH_LONG).show()
         return@addOnSuccessListener
+      }
+      firebaseAnalytics.logEvent("download_game_success") {
+        param("game_name", customGameName)
       }
       val numCards = userImageList.images.size * 2
       boardSize = BoardSize.getByValue(numCards)
@@ -140,6 +171,7 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun showCreationDialog() {
+    firebaseAnalytics.logEvent("creation_show_dialog", null)
     val boardSizeView = LayoutInflater.from(this).inflate(R.layout.dialog_board_size, null)
     val radioGroupSize = boardSizeView.findViewById<RadioGroup>(R.id.radioGroupSize)
     showAlertDialog("Create your own memory board", boardSizeView, View.OnClickListener {
@@ -147,6 +179,9 @@ class MainActivity : AppCompatActivity() {
         R.id.rbEasy -> BoardSize.EASY
         R.id.rbMedium -> BoardSize.MEDIUM
         else -> BoardSize.HARD
+      }
+      firebaseAnalytics.logEvent("creation_start_activity") {
+        param("board_size", desiredBoardSize.name)
       }
       val intent = Intent(this, CreateActivity::class.java)
       intent.putExtra(EXTRA_BOARD_SIZE, desiredBoardSize)
@@ -236,6 +271,10 @@ class MainActivity : AppCompatActivity() {
       if (memoryGame.haveWonGame()) {
         Snackbar.make(clRoot, "You won! Congratulations.", Snackbar.LENGTH_LONG).show()
         CommonConfetti.rainingConfetti(clRoot, intArrayOf(Color.YELLOW, Color.GREEN, Color.MAGENTA)).oneShot()
+        firebaseAnalytics.logEvent("won_game") {
+          param("game_name", gameName ?: "[default]")
+          param("board_size", boardSize.name)
+        }
       }
     }
     tvNumMoves.text = "Moves: ${memoryGame.getNumMoves()}"

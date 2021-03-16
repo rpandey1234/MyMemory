@@ -1,9 +1,7 @@
 package com.rkpandey.mymemory.creation
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -24,12 +22,17 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.analytics.ktx.logEvent
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.google.firebase.storage.ktx.storage
 import com.rkpandey.mymemory.R
 import com.rkpandey.mymemory.models.BoardSize
-import com.rkpandey.mymemory.utils.*
+import com.rkpandey.mymemory.utils.BitmapScaler
+import com.rkpandey.mymemory.utils.EXTRA_BOARD_SIZE
+import com.rkpandey.mymemory.utils.EXTRA_GAME_NAME
 import java.io.ByteArrayOutputStream
 
 class CreateActivity : AppCompatActivity() {
@@ -37,8 +40,6 @@ class CreateActivity : AppCompatActivity() {
   companion object {
     private const val TAG = "CreateActivity"
     private const val PICK_PHOTO_CODE = 655
-    private const val READ_EXTERNAL_PHOTOS_CODE = 248
-    private const val READ_PHOTOS_PERMISSION = Manifest.permission.READ_EXTERNAL_STORAGE
   }
 
   private lateinit var rvImagePicker: RecyclerView
@@ -50,6 +51,8 @@ class CreateActivity : AppCompatActivity() {
   private lateinit var boardSize: BoardSize
   private val chosenImageUris = mutableListOf<Uri>()
   private var numImagesRequired = -1
+  private val firebaseAnalytics = Firebase.analytics
+  private val remoteConfig = Firebase.remoteConfig
   private val storage = Firebase.storage
   private val db = Firebase.firestore
 
@@ -81,12 +84,7 @@ class CreateActivity : AppCompatActivity() {
     })
     imagePickerAdapter = ImagePickerAdapter(this, chosenImageUris, boardSize, object: ImagePickerAdapter.ImageClickListener {
       override fun onPlaceholderClicker() {
-        // Need READ_EXTERNAL_FILES permission
-        if (isPermissionGranted(this@CreateActivity, READ_PHOTOS_PERMISSION)) {
-          launchIntentForPhotos()
-        } else {
-          requestPermission(this@CreateActivity, READ_PHOTOS_PERMISSION, READ_EXTERNAL_PHOTOS_CODE)
-        }
+        launchIntentForPhotos()
       }
     })
     rvImagePicker.adapter = imagePickerAdapter
@@ -100,17 +98,6 @@ class CreateActivity : AppCompatActivity() {
       return true
     }
     return super.onOptionsItemSelected(item)
-  }
-
-  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-    if (requestCode == READ_EXTERNAL_PHOTOS_CODE) {
-      if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-        launchIntentForPhotos()
-      } else {
-        Toast.makeText(this, "In order to create a custom game, you need to provide access to your photos", Toast.LENGTH_LONG).show()
-      }
-    }
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -142,6 +129,9 @@ class CreateActivity : AppCompatActivity() {
   private fun saveDataToFirebase() {
     Log.i(TAG, "Going to save data to Firebase")
     val customGameName = etGameName.text.toString().trim()
+    firebaseAnalytics.logEvent("creation_save_attempt") {
+      param("game_name", customGameName)
+    }
     btnSave.isEnabled = false
     db.collection("games").document(customGameName).get().addOnSuccessListener { document ->
       if (document != null && document.data != null) {
@@ -204,6 +194,9 @@ class CreateActivity : AppCompatActivity() {
           Toast.makeText(this, "Failed game creation", Toast.LENGTH_SHORT).show()
           return@addOnCompleteListener
         }
+        firebaseAnalytics.logEvent("creation_save_success") {
+          param("game_name", gameName)
+        }
         Log.i(TAG, "Successfully created game $gameName")
         AlertDialog.Builder(this)
           .setTitle("Upload complete! Let's play your game '$gameName'")
@@ -224,10 +217,10 @@ class CreateActivity : AppCompatActivity() {
       MediaStore.Images.Media.getBitmap(contentResolver, photoUri)
     }
     Log.i(TAG, "Original width ${originalBitmap.width} and height ${originalBitmap.height}")
-    val scaledBitmap = BitmapScaler.scaleToFitHeight(originalBitmap, 250)
+    val scaledBitmap = BitmapScaler.scaleToFitHeight(originalBitmap, remoteConfig.getLong("scaled_height").toInt())
     Log.i(TAG, "Scaled width ${scaledBitmap.width} and height ${scaledBitmap.height}")
     val byteOutputStream = ByteArrayOutputStream()
-    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 60, byteOutputStream)
+    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, remoteConfig.getLong("compress_quality").toInt(), byteOutputStream)
     return byteOutputStream.toByteArray()
   }
 
