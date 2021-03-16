@@ -6,6 +6,8 @@
 
 <a href='https://play.google.com/store/apps/details?id=com.rkpandey.mymemory'><img width="200px" src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' /></a>
 
+Watch the [YouTube walkthrough video](https://www.youtube.com/watch?v=ivZN2Ozs5fA&list=PL7NYbSE8uaBCvfw20f0Q6pNSGgiYGLwzI)
+
 An open-source Android memory game. Play with the default icons, or play a custom game using photos from your phone. You can also download memory boards made by others by entering the game name.
 
 Here are some sample games you can try out:
